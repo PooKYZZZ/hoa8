@@ -1,13 +1,18 @@
 ---
-- name: Extract executable from PCAP on Control Node
+- name: Install Tools & Extract Executable from PCAP
   hosts: servers
   become: yes
   tasks:
-    - name: Ensure required tools are installed
+    - name: Ensure package list is updated
+      apt:
+        update_cache: yes
+
+    - name: Install required tools
       apt:
         name:
           - wireshark
           - tcpdump
+          - tshark
         state: present
 
     - name: Transfer PCAP file to Control Node
