@@ -27,17 +27,3 @@
       fail:
         msg: "No executable was extracted from the PCAP file. Check the tshark command and PCAP file."
       when: not extracted_file.stat.exists
-
-- name: Fetch the extracted executable to the Manage node
-  hosts: localhost
-  tasks:
-    - name: Fetch the extracted executable from the Control node
-      fetch:
-        src: /home/qfmgayao/extracted_executable.bin
-        dest: ./extracted_executable.bin
-        flat: yes
-      register: fetch_result
-
-    - name: Show the fetch result
-      debug:
-        var: fetch_result
