@@ -1,43 +1,34 @@
 ---
-- name: Install Tools & Extract Executable from PCAP
-  hosts: servers
+- name: Extract executable from PCAP file on Control Node
+  hosts: control
   become: yes
   tasks:
-    - name: Ensure package list is updated
+    - name: Update apt cache and install tshark
       apt:
+        name: tshark
+        state: present
         update_cache: yes
 
-    - name: Install required tools
-      apt:
-        name:
-          - wireshark
-          - tcpdump
-          - tshark
-        state: present
-
-    - name: Transfer PCAP file to Control Node
-      copy:
-        src: /tmp/captured.pcap
-        dest: /tmp/captured.pcap
-        remote_src: yes
-
-    - name: Extract executables from PCAP using TShark
+    - name: Extract executable using tshark from PCAP file
       shell: |
-        tshark -r /tmp/captured.pcap --export-objects http,/tmp/extracted_files/
-        tshark -r /tmp/captured.pcap --export-objects smb,/tmp/extracted_files/
-        tshark -r /tmp/captured.pcap --export-objects ftp,/tmp/extracted_files/
-      register: tshark_output
+        # Updated PCAP file path /tmp/captured.pcap
+        tshark -r /tmp/captured.pcap -qz "follow,tcp,raw,0" > /tmp/extracted_executable.bin
+      args:
+        executable: /bin/bash
+      register: extraction_result
 
-    - name: Show TShark extraction results
-      debug:
-        var: tshark_output.stdout_lines
+    - name: Check if the extraction produced a file
+      stat:
+        path: /tmp/extracted_executable.bin
+      register: extracted_file
 
-    - name: Check if any files were extracted
-      find:
-        paths: /tmp/extracted_files/
-      register: extracted_files
+    - name: Fail if no file was extracted
+      fail:
+        msg: "No executable was extracted from the PCAP file. Check the tshark command and PCAP file."
+      when: not extracted_file.stat.exists
 
-    - name: Report success or failure
-      debug:
-        msg: "Executable extracted successfully"
-      when: extracted_files.matched > 0
+    - name: Fetch the extracted executable to the Manage node
+      fetch:
+        src: /tmp/extracted_executable.bin
+        dest: ./extracted_executable.bin
+        flat: yes
