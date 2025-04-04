@@ -1,36 +1,38 @@
----
-- name: Extract Executables from PCAP
+- name: Extract Executables from PCAP using tshark
   hosts: servers
-  become: yes
   tasks:
-    - name: Install required tools
+    - name: Install required tools (tshark)
       apt:
         name:
-          - tcpdump
-          - foremost
+          - tshark
         state: present
+        update_cache: yes
 
     - name: Ensure PCAP file exists
       stat:
-        path: /home/user/capture.pcap
+        path: /path/to/captured.pcap
       register: pcap_file
 
     - name: Create extracted_files directory
       file:
-        path: /home/user/extracted_files
+        path: /tmp/extracted_files
         state: directory
-        mode: '0755'
+
+    - name: Extract objects from PCAP with tshark
+      command: tshark -r /path/to/captured.pcap --export-objects http,/tmp/extracted_files/
       when: pcap_file.stat.exists
 
-    - name: Extract executables with foremost
-      command: foremost -i /home/user/capture.pcap -o /home/user/extracted_files
+    - name: Identify executable files
+      shell: "file /tmp/extracted_files/* | grep 'executable'"
+      register: exec_files
       when: pcap_file.stat.exists
 
-    - name: Verify extracted files
-      command: ls -lah /home/user/extracted_files
-      register: extraction_output
-      when: pcap_file.stat.exists
+    - name: Check if any executable files were found
+      fail:
+        msg: "No executable files found in /tmp/extracted_files/"
+      when: exec_files.stdout_lines | length == 0
 
-    - debug:
-        var: extraction_output.stdout
-      when: extraction_output is defined
+    - name: Transfer executable files to Manage node
+      command: scp {{ item }} user@manage-node:/destination/path/
+      with_items: "{{ exec_files.stdout_lines }}"
+      when: exec_files.stdout_lines | length > 0
