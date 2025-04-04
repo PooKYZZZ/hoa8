@@ -1,6 +1,6 @@
 ---
 - name: Extract executable from PCAP file on Control Node
-  hosts: servers
+  hosts: servers  # Ensure your inventory contains this group (servers)
   become: yes
   tasks:
     - name: Update apt cache and install tshark
@@ -27,8 +27,16 @@
         msg: "No executable was extracted from the PCAP file. Check the tshark command and PCAP file."
       when: not extracted_file.stat.exists
 
-    - name: Fetch the extracted executable to the Manage node
+- name: Fetch the extracted executable to the Manage node
+  hosts: localhost  # You can use localhost to fetch the file to the local machine
+  tasks:
+    - name: Fetch the extracted executable from the Control node
       fetch:
         src: /tmp/extracted_executable.bin
         dest: ./extracted_executable.bin
         flat: yes
+      register: fetch_result
+
+    - name: Show the fetch result
+      debug:
+        var: fetch_result
