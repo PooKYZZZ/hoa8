@@ -3,38 +3,36 @@
   hosts: servers
   become: yes
   tasks:
-    - name: Ensure wireshark is installed
+    - name: Ensure required tools are installed
       apt:
-        name: wireshark
-        state: present
-
-    - name: Ensure tcpdump is installed
-      apt:
-        name: tcpdump
+        name:
+          - wireshark
+          - tcpdump
         state: present
 
     - name: Transfer PCAP file to Control Node
       copy:
-        src: /tmp/captured.pcap  # This is the path on the Manage Node
-        dest: /tmp/captured.pcap  # Destination path on the Control Node
+        src: /tmp/captured.pcap
+        dest: /tmp/captured.pcap
+        remote_src: yes
 
-    - name: Extract executable from PCAP using Wireshark (tshark)
+    - name: Extract executables from PCAP using TShark
       shell: |
-        tshark -r /tmp/captured.pcap -Y 'http.file_data' -T fields -e http.file_data > /tmp/extracted_data.bin
+        tshark -r /tmp/captured.pcap --export-objects http,/tmp/extracted_files/
+        tshark -r /tmp/captured.pcap --export-objects smb,/tmp/extracted_files/
+        tshark -r /tmp/captured.pcap --export-objects ftp,/tmp/extracted_files/
       register: tshark_output
 
-    - name: Check if executable was found
-      stat:
-        path: /tmp/extracted_data.bin
-      register: file_stat
+    - name: Show TShark extraction results
+      debug:
+        var: tshark_output.stdout_lines
+
+    - name: Check if any files were extracted
+      find:
+        paths: /tmp/extracted_files/
+      register: extracted_files
 
     - name: Report success or failure
       debug:
         msg: "Executable extracted successfully"
-      when: file_stat.stat.exists
-
-    - name: Clean up extracted data
-      file:
-        path: /tmp/extracted_data.bin
-        state: absent
-      when: file_stat.stat.exists
+      when: extracted_files.matched > 0
