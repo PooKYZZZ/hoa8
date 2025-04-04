@@ -1,6 +1,6 @@
 ---
 - name: Extract executable from PCAP on Control Node
-  hosts: control_node
+  hosts: servers
   become: yes
   tasks:
     - name: Ensure wireshark is installed
