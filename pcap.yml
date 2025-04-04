@@ -10,12 +10,12 @@
         update_cache: yes
 
     - name: Extract executable using tshark from PCAP file
-      shell: tshark -r /tmp/captured.pcap -qz "follow,tcp,raw,0" > /tmp/extracted_executable.bin
+      shell: tshark -r /tmp/captured.pcap -qz "follow,tcp,raw,0" > /home/qfmgayao/extracted_executable.bin
       register: extraction_result
 
     - name: Check if the extraction produced a file
       stat:
-        path: /tmp/extracted_executable.bin
+        path: /home/qfmgayao/extracted_executable.bin
       register: extracted_file
 
     - name: Fail if no file was extracted
@@ -28,7 +28,7 @@
   tasks:
     - name: Fetch the extracted executable from the Control node
       fetch:
-        src: /tmp/extracted_executable.bin
+        src: /home/qfmgayao/extracted_executable.bin
         dest: ./extracted_executable.bin
         flat: yes
       register: fetch_result
