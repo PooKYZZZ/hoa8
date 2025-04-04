@@ -15,6 +15,13 @@
         path: /home/user/capture.pcap
       register: pcap_file
 
+    - name: Create extracted_files directory
+      file:
+        path: /home/user/extracted_files
+        state: directory
+        mode: '0755'
+      when: pcap_file.stat.exists
+
     - name: Extract executables with foremost
       command: foremost -i /home/user/capture.pcap -o /home/user/extracted_files
       when: pcap_file.stat.exists
@@ -22,6 +29,8 @@
     - name: Verify extracted files
       command: ls -lah /home/user/extracted_files
       register: extraction_output
+      when: pcap_file.stat.exists
 
     - debug:
         var: extraction_output.stdout
+      when: extraction_output is defined
