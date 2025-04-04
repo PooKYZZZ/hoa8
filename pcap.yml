@@ -1,6 +1,6 @@
 ---
 - name: Extract executable from PCAP file on Control Node
-  hosts: control
+  hosts: servers
   become: yes
   tasks:
     - name: Update apt cache and install tshark
