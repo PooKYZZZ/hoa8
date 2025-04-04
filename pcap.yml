@@ -1,0 +1,27 @@
+---
+- name: Extract Executables from PCAP
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Install required tools
+      apt:
+        name:
+          - tcpdump
+          - foremost
+        state: present
+
+    - name: Ensure PCAP file exists
+      stat:
+        path: /home/user/capture.pcap
+      register: pcap_file
+
+    - name: Extract executables with foremost
+      command: foremost -i /home/user/capture.pcap -o /home/user/extracted_files
+      when: pcap_file.stat.exists
+
+    - name: Verify extracted files
+      command: ls -lah /home/user/extracted_files
+      register: extraction_output
+
+    - debug:
+        var: extraction_output.stdout
