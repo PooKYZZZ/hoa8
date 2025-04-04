@@ -10,9 +10,7 @@
         update_cache: yes
 
     - name: Extract executable using tshark from PCAP file
-      shell: |
-        # Updated PCAP file path /tmp/captured.pcap
-        tshark -r /tmp/captured.pcap -qz "follow,tcp,raw,0" > /tmp/extracted_executable.bin
+      command: sudo tshark -r /tmp/captured.pcap -qz "follow,tcp,raw,0" > /tmp/extracted_executable.bin
       args:
         executable: /bin/bash
       register: extraction_result
