@@ -1,2 +1,2 @@
 [servers]
-mn2 ansible_host=192.168.65.129 ansible_user=qfmgayao
+mn2 ansible_host=192.168.65.129 ansible_user=qfmgayao ansible_ssh_private_key_file=~/.ssh/id_rsa
