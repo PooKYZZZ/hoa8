@@ -1,38 +1,40 @@
-- name: Extract Executables from PCAP using tshark
-  hosts: servers
+---
+- name: Extract executable from PCAP on Control Node
+  hosts: control_node
+  become: yes
   tasks:
-    - name: Install required tools (tshark)
+    - name: Ensure wireshark is installed
       apt:
-        name:
-          - tshark
+        name: wireshark
         state: present
-        update_cache: yes
 
-    - name: Ensure PCAP file exists
+    - name: Ensure tcpdump is installed
+      apt:
+        name: tcpdump
+        state: present
+
+    - name: Transfer PCAP file to Control Node
+      copy:
+        src: /path/to/local/pcap/file.pcap
+        dest: /tmp/file.pcap
+
+    - name: Extract executable from PCAP using Wireshark (tshark)
+      shell: |
+        tshark -r /tmp/file.pcap -Y 'http.file_data' -T fields -e http.file_data > /tmp/extracted_data.bin
+      register: tshark_output
+
+    - name: Check if executable was found
       stat:
-        path: /path/to/captured.pcap
-      register: pcap_file
+        path: /tmp/extracted_data.bin
+      register: file_stat
 
-    - name: Create extracted_files directory
+    - name: Report success or failure
+      debug:
+        msg: "Executable extracted successfully" 
+      when: file_stat.stat.exists
+
+    - name: Clean up extracted data
       file:
-        path: /tmp/extracted_files
-        state: directory
-
-    - name: Extract objects from PCAP with tshark
-      command: tshark -r /path/to/captured.pcap --export-objects http,/tmp/extracted_files/
-      when: pcap_file.stat.exists
-
-    - name: Identify executable files
-      shell: "file /tmp/extracted_files/* | grep 'executable'"
-      register: exec_files
-      when: pcap_file.stat.exists
-
-    - name: Check if any executable files were found
-      fail:
-        msg: "No executable files found in /tmp/extracted_files/"
-      when: exec_files.stdout_lines | length == 0
-
-    - name: Transfer executable files to Manage node
-      command: scp {{ item }} user@manage-node:/destination/path/
-      with_items: "{{ exec_files.stdout_lines }}"
-      when: exec_files.stdout_lines | length > 0
+        path: /tmp/extracted_data.bin
+        state: absent
+      when: file_stat.stat.exists
