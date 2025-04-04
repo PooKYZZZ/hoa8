@@ -15,8 +15,8 @@
 
     - name: Transfer PCAP file to Control Node
       copy:
-        src: /path/to/local/pcap/file.pcap
-        dest: /tmp/file.pcap
+        src: /tmp/captured.pcap
+        dest: /tmp/captured.pcap
 
     - name: Extract executable from PCAP using Wireshark (tshark)
       shell: |
